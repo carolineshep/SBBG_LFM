@@ -30,20 +30,11 @@ lfm_data <- read.csv(here("LFM_PaintedCave_data.csv"))
 
 ```
 
- # \jr_sbbg_projects\2_rwmp\lfmm
+ 
 ```{r import data}
-```
 
-
-
-
-
-```{r import data}
-LFM_raw <- read.csv('~/jr_sbbg_projects/2_rwmp/lfmm/LFM_PaintedCave_jr.csv') %>%
-
-
-LFM_raw <- read.csv ("C:/Users/jrenteria/OneDrive - Santa Barbara Botanic Garden/jr_sbbg_projects/2_rwmp/lfmm/LFM_PaintedCave_jr.csv") %>%
-  mutate(LFM = LFM*100,
+LFM_raw <- lfm_data %>% 
+  mutate(LFM = LFM*100,# but LFM is indeed a number? I changed it in the CSV, but idk what else to do
          Species = recode_factor(Species,
                                  "ADFA" = "Chamise",
                                  "CEME" = "Bigpod ceanothus")) %>%
@@ -57,7 +48,8 @@ LFM_raw <- read.csv ("C:/Users/jrenteria/OneDrive - Santa Barbara Botanic Garden
 
 # Create historical dataset
 LFM_16_20 <- LFM_raw %>%
-  filter(Concern != "Yes",
+  filter(Concern != "Yes", #I don't know if we should do this.. some of the "yes"s are important still and shouldn't be removed? need to look into this more
+         Species != "ADFA",
          Species != "CEBE",
          Species != "QUAG", 
          Site == "Painted Cave") %>%
