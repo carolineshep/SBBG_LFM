@@ -1,0 +1,155 @@
+---
+title: "LFM_GraphforWebsite"
+author: "Josie Lesage"
+date: "8/4/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load packages
+library(tidyverse)
+library(plotrix)
+library(reactable)
+library(gridExtra)
+library(lubridate)
+library(here)
+
+```
+
+# File Goal
+This file will produce graphs for the SBBG website. 
+
+
+```{r import data}
+
+lfm_data <- read.csv(here("LFM_PaintedCave_data.csv"))
+
+```
+
+ # \jr_sbbg_projects\2_rwmp\lfmm
+```{r import data}
+```
+
+
+
+
+
+```{r import data}
+LFM_raw <- read.csv('~/jr_sbbg_projects/2_rwmp/lfmm/LFM_PaintedCave_jr.csv') %>%
+
+
+LFM_raw <- read.csv ("C:/Users/jrenteria/OneDrive - Santa Barbara Botanic Garden/jr_sbbg_projects/2_rwmp/lfmm/LFM_PaintedCave_jr.csv") %>%
+  mutate(LFM = LFM*100,
+         Species = recode_factor(Species,
+                                 "ADFA" = "Chamise",
+                                 "CEME" = "Bigpod ceanothus")) %>%
+  # mutate(week = week(Collection.date)) %>%
+  mutate(Subsite = recode_factor(Subsite, "Unknown" = "")) %>%
+  rename(dry.weight = Dry.weight.in.canstier)
+
+```
+
+```{r make graphs}
+
+# Create historical dataset
+LFM_16_20 <- LFM_raw %>%
+  filter(Concern != "Yes",
+         Species != "CEBE",
+         Species != "QUAG", 
+         Site == "Painted Cave") %>%
+  mutate(Collection.date2 = mdy(Collection.date)) %>%
+  separate(Collection.date2, sep = "-", into = c("year", "month", "day")) %>%
+  select(-day) %>% mutate(day = "15") %>%
+  filter(year == "2017" | year == "2018" | year == "2019" | year == "2020" | year == "2021") %>%
+  group_by(Site, Species, month, day) %>%
+  summarise(meanLFM = mean(LFM),
+            seLFM = std.error(LFM)) %>%
+  ungroup() %>%
+  mutate(Time = "Historical Mean (2017-2021)",
+         Species = as.factor(Species),
+         year = "2022") %>%
+  unite(month, day, year, col = "coll.date", sep = "/") %>%
+  mutate(Collection.date2 = mdy(coll.date),
+         Time = "Historical (2017-2021)",
+         Species2 = Species,
+         Time2 = Time,) %>%
+  unite(Species2, Time2, col = "group", sep = ", ")
+
+# Create 2021-2022 dataset
+LFM_2021 <- LFM_raw %>%
+  filter(Concern != "Yes",
+         Species != "CEBE",
+         Species != "QUAG", 
+         Site == "Painted Cave") %>%
+  mutate(Collection.date2 = mdy(Collection.date),
+         month = month(Collection.date2, label = TRUE)) %>%
+  separate(Collection.date2, sep = "-", into = c("year", "holdmonth", "day")) %>%
+  filter(year == "2022") %>%
+  group_by(Site, Species, month, Collection.date) %>%
+  summarise(meanLFM = mean(LFM),
+            seLFM = std.error(LFM)) %>%
+  mutate(Time = "2022",
+         Time2 = Time,
+         Species2 = Species) %>%
+  unite(Species2, Time2, col = "group", sep = ", ") %>%
+  rename(Collection.date2 = Collection.date) %>%
+  mutate(Collection.date2 = mdy(Collection.date2))
+
+LFM_MasterClumped <- full_join(LFM_16_20, LFM_2021)
+
+# set graph x axis limits
+min_date <- as_date("2022-01-01")
+max_date <- as_date("2022-12-31")
+
+LFM_comp_graph <- ggplot(data = LFM_MasterClumped, aes(x = Collection.date2, y = meanLFM)) +
+  theme_bw() +
+  facet_grid(~Species) +
+      
+  # red warning line
+  geom_hline(aes(yintercept = 60, color = "60% Critical Threshold \n"), color = "red", linetype="dashed", size=1) +
+  
+  # add data
+  geom_line(aes(color = group, linetype =  group), size = 1.5) +
+  geom_errorbar(aes(x = Collection.date2, ymin = meanLFM-seLFM, ymax = meanLFM+seLFM, width = 5), size = 1, color = "gray20") +
+  geom_point(aes(fill = group, shape = group), size = 3) +
+  
+  # make it pretty
+  labs(x = "Month",
+       y = "Live Fuel Mositure Content (%)",
+       title = "Average Monthly Live Fuel Moisture \nConditions at Painted Cave",
+       group  = "Species and time") +
+  
+  guides(colour = guide_legend(element_blank()),
+         fill = guide_legend(element_blank()),
+         shape = guide_legend(element_blank()),
+         linetype = guide_legend(element_blank())) +
+  
+  scale_y_continuous(limits = c(50,150), expand = c(0,0), breaks=seq (0,200,10)) +
+  scale_x_date(limits = c(min_date, max_date), breaks = "1 month", minor_breaks = NULL, date_labels = "%b", expand = c(0,0)) +
+
+  scale_colour_manual(values = c("#117733", "#5ab4ac", "#D27577", "#882255"), name = "Species") +
+  scale_fill_manual(values = c("#117733", "#5ab4ac", "#D27577", "#882255")) +
+  scale_linetype_manual(values = c("dotted", "solid", "dotted", "solid")) +
+  scale_shape_manual(values = c(21, 23, 24, 22)) +
+  theme(axis.text.x = element_text(hjust = 0.5, vjust = 0.5, angle = 45, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        title = element_text(size = 16),
+        legend.position = "bottom",
+        legend.box = "vertical",
+        legend.direction = "vertical",
+        legend.background = element_blank(),
+        legend.text = element_text(size = 10),
+        strip.background = element_rect(colour="black", fill="white")) 
+
+LFM_comp_graph  
+
+ggsave(plot = LFM_comp_graph, filename = "Figures/LFM_2021_5YearComparison_818_2.png", height = 1800, width = 2400, units = "px", dpi = 300)
+
+```
+
