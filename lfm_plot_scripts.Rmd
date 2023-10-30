@@ -21,7 +21,7 @@ library(here)
 ```
 
 # File Goal
-This file will produce graphs depitcing LFM values for the SBBG website. 
+This file will produce graphs depicting LFM values for the SBBG website. 
 
 
 ```{r import data}
@@ -47,8 +47,8 @@ LFM_raw <- lfm_data %>%
 ```{r make graphs}
 
 # Create historical dataset
-LFM_16_20 <- LFM_raw %>%
-  filter(Concern != "Yes", #I don't know if we should do this.. some of the "yes"s are important still and shouldn't be removed? need to look into this more
+LFM_16_22 <- LFM_raw %>%
+  filter(Concern != "Yes",
          Species != "ADFA",
          Species != "CEBE",
          Species != "QUAG", 
@@ -56,23 +56,23 @@ LFM_16_20 <- LFM_raw %>%
   mutate(Collection.date2 = mdy(Collection.date)) %>%
   separate(Collection.date2, sep = "-", into = c("year", "month", "day")) %>%
   select(-day) %>% mutate(day = "15") %>%
-  filter(year == "2017" | year == "2018" | year == "2019" | year == "2020" | year == "2021") %>%
+  filter(year == "2016" | year == "2017" | year == "2018" | year == "2019" | year == "2020" | year == "2021" | year == "2022") %>%
   group_by(Site, Species, month, day) %>%
-  summarise(meanLFM = mean(LFM),
+  mutate(meanLFM = mean(LFM),
             seLFM = std.error(LFM)) %>%
   ungroup() %>%
-  mutate(Time = "Historical Mean (2017-2021)",
+  mutate(Time = "Historical Mean (2016-2022)",
          Species = as.factor(Species),
-         year = "2022") %>%
+         year = "2023") %>%
   unite(month, day, year, col = "coll.date", sep = "/") %>%
   mutate(Collection.date2 = mdy(coll.date),
-         Time = "Historical (2017-2021)",
+         Time = "Historical (2016-2022)",
          Species2 = Species,
          Time2 = Time,) %>%
   unite(Species2, Time2, col = "group", sep = ", ")
 
 # Create 2021-2022 dataset
-LFM_2021 <- LFM_raw %>%
+LFM_2023 <- LFM_raw %>%
   filter(Concern != "Yes",
          Species != "CEBE",
          Species != "QUAG", 
@@ -80,22 +80,22 @@ LFM_2021 <- LFM_raw %>%
   mutate(Collection.date2 = mdy(Collection.date),
          month = month(Collection.date2, label = TRUE)) %>%
   separate(Collection.date2, sep = "-", into = c("year", "holdmonth", "day")) %>%
-  filter(year == "2022") %>%
+  filter(year == "2023") %>%
   group_by(Site, Species, month, Collection.date) %>%
   summarise(meanLFM = mean(LFM),
             seLFM = std.error(LFM)) %>%
-  mutate(Time = "2022",
+  mutate(Time = "2023",
          Time2 = Time,
          Species2 = Species) %>%
   unite(Species2, Time2, col = "group", sep = ", ") %>%
   rename(Collection.date2 = Collection.date) %>%
   mutate(Collection.date2 = mdy(Collection.date2))
 
-LFM_MasterClumped <- full_join(LFM_16_20, LFM_2021)
+LFM_MasterClumped <- full_join(LFM_16_22, LFM_2023)
 
 # set graph x axis limits
-min_date <- as_date("2022-01-01")
-max_date <- as_date("2022-12-31")
+min_date <- as_date("2023-01-01")
+max_date <- as_date("2023-12-31")
 
 LFM_comp_graph <- ggplot(data = LFM_MasterClumped, aes(x = Collection.date2, y = meanLFM)) +
   theme_bw() +
@@ -120,7 +120,7 @@ LFM_comp_graph <- ggplot(data = LFM_MasterClumped, aes(x = Collection.date2, y =
          shape = guide_legend(element_blank()),
          linetype = guide_legend(element_blank())) +
   
-  scale_y_continuous(limits = c(50,150), expand = c(0,0), breaks=seq (0,200,10)) +
+  scale_y_continuous(limits = c(50,180), expand = c(0,0), breaks=seq (0,200,10)) +
   scale_x_date(limits = c(min_date, max_date), breaks = "1 month", minor_breaks = NULL, date_labels = "%b", expand = c(0,0)) +
 
   scale_colour_manual(values = c("#117733", "#5ab4ac", "#D27577", "#882255"), name = "Species") +
