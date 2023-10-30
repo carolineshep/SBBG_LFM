@@ -21,7 +21,7 @@ library(here)
 ```
 
 # File Goal
-This file will produce graphs for the SBBG website. 
+This file will produce graphs depitcing LFM values for the SBBG website. 
 
 
 ```{r import data}
