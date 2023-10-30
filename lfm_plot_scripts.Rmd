@@ -31,7 +31,7 @@ lfm_data <- read.csv(here("LFM_PaintedCave_data.csv"))
 ```
 
  
-```{r import data}
+```{r data}
 
 LFM_raw <- lfm_data %>% 
   mutate(LFM = LFM*100,# but LFM is indeed a number? I changed it in the CSV, but idk what else to do
