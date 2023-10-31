@@ -40,7 +40,7 @@ LFM_raw <- lfm_data %>%
                                  "CEME" = "Bigpod ceanothus")) %>%
   # mutate(week = week(Collection.date)) %>%
   mutate(Subsite = recode_factor(Subsite, "Unknown" = "")) %>%
-  rename(dry.weight = Dry.weight.in.canstier)
+  rename(dry.weight = Dry.weight.in.canister)
 
 ```
 
@@ -71,7 +71,7 @@ LFM_16_22 <- LFM_raw %>%
          Time2 = Time,) %>%
   unite(Species2, Time2, col = "group", sep = ", ")
 
-# Create 2021-2022 dataset
+# Create 2023 dataset
 LFM_2023 <- LFM_raw %>%
   filter(Concern != "Yes",
          Species != "CEBE",
